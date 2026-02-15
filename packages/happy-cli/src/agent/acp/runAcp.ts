@@ -267,7 +267,7 @@ function formatEnvelopeForServerLog(agentName: string, envelope: SessionEnvelope
 
 type AcpSwitchMode = {
   permissionMode?: string;
-  model?: string | null;
+  model?: string;
 };
 
 type AcpSelectableOption = {
@@ -745,7 +745,7 @@ export async function runAcp(opts: {
         if (verbose) {
           logAcp('muted', `Outgoing modes from ${opts.agentName} (${modes.availableModes.length}), current=${modes.currentModeId}:`);
           for (const mode of modes.availableModes) {
-            logAcp('muted', `  mode=${mode.id} name=${mode.name}${formatOptionalDetail(mode.description, 160)}`);
+            logAcp('muted', `  mode=${mode.id} name=${mode.name}${formatOptionalDetail(mode.description ?? undefined, 160)}`);
           }
         }
         session.updateMetadata((currentMetadata) =>
@@ -830,14 +830,16 @@ export async function runAcp(opts: {
     }
 
     if (message.meta && Object.prototype.hasOwnProperty.call(message.meta, 'model')) {
-      currentModel = message.meta.model ?? null;
+      // Fix type error: handle null by coercing to undefined or string
+      const rawModel = message.meta.model;
+      currentModel = rawModel === null ? null : (rawModel as string | undefined);
       logger.debug(`[${opts.agentName}] Requested ACP model: ${currentModel ?? 'null'}`);
     }
 
     messageQueue.push(message.content.text, {
       permissionMode: currentPermissionMode,
-      model: currentModel,
-    });
+      model: (currentModel ?? undefined) as string | undefined,
+    } as AcpSwitchMode);
   });
   session.keepAlive(thinking, 'remote');
 

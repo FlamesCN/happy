@@ -262,6 +262,11 @@ export async function claudeLocal(opts: {
                                 spawnArgs = [...spawnArgs, '--dangerously-skip-permissions'];
                             }
 
+                            // Ensure the new flag is also passed if present
+                            if (args.includes('--allow-dangerously-skip-permissions') && !spawnArgs.includes('--allow-dangerously-skip-permissions')) {
+                                spawnArgs = [...spawnArgs, '--allow-dangerously-skip-permissions'];
+                            }
+
                             const fullCommand = [
                                 'node',
                                 ...spawnArgs.map((arg) => quoteShellArg(arg)),

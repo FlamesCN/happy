@@ -81,7 +81,7 @@ export function resolveInitialClaudePermissionMode(
     optionMode: PermissionMode | undefined,
     claudeArgs?: string[],
 ): PermissionMode | undefined {
-    if (claudeArgs?.includes('--dangerously-skip-permissions')) {
+    if (claudeArgs?.includes('--dangerously-skip-permissions') || claudeArgs?.includes('--allow-dangerously-skip-permissions')) {
         return 'bypassPermissions';
     }
     return extractPermissionModeFromClaudeArgs(claudeArgs) ?? optionMode;

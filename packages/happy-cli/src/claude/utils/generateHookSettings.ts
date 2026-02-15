@@ -6,7 +6,8 @@
  */
 
 import { join, resolve } from 'node:path';
-import { writeFileSync, mkdirSync, unlinkSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, unlinkSync, existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { configuration } from '@/configuration';
 import { logger } from '@/ui/logger';
 import { projectPath } from '@/projectPath';
@@ -29,18 +30,36 @@ export function generateHookSettingsFile(port: number): string {
     const forwarderScript = resolve(projectPath(), 'scripts', 'session_hook_forwarder.cjs');
     const hookCommand = `node "${forwarderScript}" ${port}`;
 
+    let userSettings = {};
+    const userSettingsPath = join(homedir(), '.claude', 'settings.json');
+    
+    try {
+        if (existsSync(userSettingsPath)) {
+            userSettings = JSON.parse(readFileSync(userSettingsPath, 'utf8'));
+            logger.debug(`[generateHookSettings] Loaded user settings from: ${userSettingsPath}`);
+        }
+    } catch (error) {
+        logger.debug(`[generateHookSettings] Failed to load user settings: ${error}`);
+    }
+
+    const hookConfig = {
+        matcher: "*",
+        hooks: [
+            {
+                type: "command",
+                command: hookCommand
+            }
+        ]
+    };
+
+    // Merge hook config into user settings
     const settings = {
+        ...userSettings,
         hooks: {
+            ...(userSettings as any).hooks,
             SessionStart: [
-                {
-                    matcher: "*",
-                    hooks: [
-                        {
-                            type: "command",
-                            command: hookCommand
-                        }
-                    ]
-                }
+                ...((userSettings as any).hooks?.SessionStart || []),
+                hookConfig
             ]
         }
     };
